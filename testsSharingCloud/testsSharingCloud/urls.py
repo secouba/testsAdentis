@@ -20,5 +20,5 @@ from resourceManagement import views
 urlpatterns = [
     path('', views.index),
     re_path(r'^resourceManagement/', include('resourceManagement.urls')),
-    path('admin/', admin.site.urls),
+    path('tetrix/', admin.site.urls),
 ]
