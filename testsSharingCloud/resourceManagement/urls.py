@@ -9,5 +9,4 @@ urlpatterns = [
     path('book_lists', views.book_lists, name='lists'),
     path('book/<int:id_booking>/', views.edit_book, name='edit_book'),
     
-    
 ]
