@@ -52,7 +52,7 @@
 			  <td>{{ i.resource.resourceType }}</td>
 			  <td>{{ i.resource.localisation }}</td>
 			  <td><a href="{% url 'edit_book' id_booking=i.id %}"><button class="btn btn-success">Modifier</button></a></td>
-			  <td><a href="delete/{{ i.id }}"><button class="btn btn-danger">Supprimer</button></a></td></td>
+			  <td><a href="{% url 'delete_book' id_booking=i.id %}"><button class="btn btn-danger">Supprimer</button></a></td></td>
 			</tr>
 			{% endfor %}
 		  </tbody>
@@ -81,7 +81,7 @@
 			  <td>{{ i.resource.resourceType }}</td>
 			  <td>{{ i.resource.localisation }}</td>
 			  <td><a href="{% url 'edit_book' id_booking=i.id %}"><button class="btn btn-success">Modifier</button></a></td>
-			  <td><a href="delete/{{ i.id }}"><button class="btn btn-danger">Supprimer</button></a></td></td>
+			  <td><a href="{% url 'delete_book' id_booking=i.id %}"><button class="btn btn-danger">Supprimer</button></a></td></td>
 			</tr>
 			{% endfor %}
 		  </tbody>

@@ -1,10 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import signForm, bookForm
 from .models import Users, Resource, Booking
 import datetime
 from django.contrib import messages
+from django.urls import reverse
 
 def index(request):
     template = loader.get_template('resourceManagement/base_index.html')
@@ -191,23 +192,12 @@ def edit_book(request, id_booking):
 
     return render(request, 'resourceManagement/base_user_book_edit.html', {'form': form})
     
- def delete_book(request, id_booking):
+def delete_book(request, id_booking):
     if request.method == 'POST':
-        # create a form instance and populate it with data from the request:
-        form = signForm(request.POST)
-        # check whether it's valid:
-        if form.is_valid():
-            # process the data in form.cleaned_data as required
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password'] 
-            userExist = Users.objects.filter(email=email).filter(password=password).exists()           
-            # redirect to a new URL:
-            if userExist:
-                request.session['email'] = email
-                return HttpResponseRedirect('base_user')
-
-    # if a GET (or any other method) we'll create a blank form
-    else:
-        form = signForm()
-
-    return render(request, 'resourceManagement/signForm.html', {'form': form})
+        instance = Booking.objects.get(pk=id_booking)
+        instance.delete()
+        messages.add_message(request, messages.INFO, 'Une réservation a été supprimé !!!')
+        return HttpResponseRedirect(reverse('lists'))
+        
+    return render(request, 'resourceManagement/base_user_book_delete.html')
+    

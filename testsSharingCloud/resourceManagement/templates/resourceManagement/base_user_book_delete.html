@@ -1,13 +1,11 @@
 {% extends 'resourceManagement/base_user.html' %}
-{% load crispy_forms_tags %}
 
 {% block content %}
 	<center>
 		<form method="POST">
 			{% csrf_token %}
 			<h3>Voulez-vous vraiment supprimer cette réservation ???</h3>
-			<!--<input type="hidden" name"id_resource" value=""/>-->
-			<p><input type="submit" value="Oui" /> <a href="../">Annuler</a></p>
+			<p><input type="submit" value="Oui" /> <a href="{% url 'lists' %}">Annuler</a></p>
 		</form>
 	</center>
 {% endblock %}
