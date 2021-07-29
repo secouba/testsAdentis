@@ -15,8 +15,8 @@ class Resource(models.Model):
     
 class Booking(models.Model):
     titleB = models.CharField(max_length=500)
-    startDate = models.DateTimeField(null=False)
-    endDate = models.DateTimeField(null=False)
+    startDate = models.DateField(null=False)
+    endDate = models.DateField(null=False)
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
     

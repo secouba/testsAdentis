@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import signForm, bookForm
@@ -47,7 +47,7 @@ def book(request):
             # process the data in form.cleaned_data as required
             startDate = str(form.cleaned_data['startDate'])
             endDate = str(form.cleaned_data['endDate'])
-            
+            print(startDate)
             splitedStartDate = startDate[:10].split('-')
             splitedEndDate = endDate[:10].split('-')
             date1 = datetime.date(int(splitedStartDate[0].lstrip('0')), int(splitedStartDate[1].lstrip('0')), int(splitedStartDate[2].lstrip('0')))
@@ -64,9 +64,9 @@ def book(request):
                 #Si tout vas bien on vérifie s'il ny'a une réservation à la même date:
                 all_booking_entries = Booking.objects.all()
                 #bookExist = all_booking_entries.filter(startDate__startswith=startDate[:10]).filter(resource__resourceType=resource)
-                bookExist = all_booking_entries.filter(startDate=startDate).filter(resource__resourceType=resource)
+                bookExist = all_booking_entries.filter(startDate=startDate[:10]).filter(resource__resourceType=resource)
                 if bookExist:
-                    messages.add_message(request, messages.INFO, 'Une réservation à cette date existe déjà ...')
+                    messages.add_message(request, messages.INFO,'Une réservation à cette date existe déjà ...')
                     return HttpResponseRedirect('book')
                 
                 #Sinon on enregistre la reservation.
@@ -75,7 +75,7 @@ def book(request):
                 #Récupération de l'utilisateur:
                 userObject = Users.objects.get(email = request.session['email'])
                 #Création et sauvegarde de l'objet Réservation
-                b = Booking(titleB = form.cleaned_data['title'], startDate = form.cleaned_data['startDate'], endDate = form.cleaned_data['endDate'], user = userObject, resource = resourceObject)
+                b = Booking(titleB = form.cleaned_data['title'], startDate = startDate[:10], endDate = endDate[:10], user = userObject, resource = resourceObject)
                 b.save()
                 messages.add_message(request, messages.INFO, 'Votre réservation a été prise en compte')
     # if a GET (or any other method) we'll create a blank form
@@ -88,8 +88,16 @@ def book(request):
 
 def book_lists(request):
 
-    currentDate = datetime.datetime.now().strftime("%Y-%m-%d 00:00:00.000000")
-    currentDateEnd = datetime.datetime.now().strftime("%Y-%m-%d 23:00:00.000000")
+    #currentDate = datetime.datetime.now().strftime("%Y-%m-%d 00:00:00.000000")
+    #currentDateEnd = datetime.datetime.now().strftime("%Y-%m-%d 23:00:00.000000")
+    
+    #all_booking_entries_eq_currentDate = all_booking_entries \
+    #.filter(user__email = request.session['email']) \
+    #.select_related('resource').select_related('user') \
+    #.filter(startDate__lte=currentDateEnd) \
+    #.filter(startDate__gte=currentDate)
+    
+    currentDate = datetime.datetime.now().strftime("%Y-%m-%d")
     
     all_booking_entries = Booking.objects.all()
     
@@ -101,13 +109,18 @@ def book_lists(request):
     all_booking_entries_eq_currentDate = all_booking_entries \
     .filter(user__email = request.session['email']) \
     .select_related('resource').select_related('user') \
-    .filter(startDate__lte=currentDateEnd) \
-    .filter(startDate__gte=currentDate)
+    .filter(startDate=currentDate) \
+    .filter(endDate__gte=currentDate) | \
+    all_booking_entries \
+    .filter(user__email = request.session['email']) \
+    .select_related('resource').select_related('user') \
+    .filter(startDate__lte=currentDate) \
+    .filter(endDate__gte=currentDate)
     
     all_booking_entries_gt_currentDate = all_booking_entries \
     .filter(user__email = request.session['email']) \
     .select_related('resource').select_related('user') \
-    .filter(startDate__gt=currentDateEnd)
+    .filter(startDate__gt=currentDate)
     
     return render(request, 'resourceManagement/base_user_book_lists.html', \
     {'bookings_lt_currentDate' : all_booking_entries_lt_currentDate, \
@@ -116,11 +129,17 @@ def book_lists(request):
     
     
 def edit_book(request, id_booking):
+    b = Booking.objects.get(pk=id_booking)
+    bData = {
+        'title' : b.titleB,
+        'startDate' : str(b.startDate),
+        'endDate' : str(b.endDate),
+        'resource' : b.resource.resourceType
+    }
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
-        b = Booking.objects.get(id=id_booking)
         
-        form = bookForm(request.POST, instance = b)
+        form = bookForm(request.POST)
         
         # vérifier si le formulaire a été bien rempli:
         if form.is_valid():
@@ -138,16 +157,17 @@ def edit_book(request, id_booking):
             #Vérifier si la 2éme date n'est pas inférieur à la première:
             if date1 > date2:               
                 messages.add_message(request, messages.INFO, 'Veuillez choisir correctement vos dates.')
-                return HttpResponseRedirect('book/'+id_booking)
+                return HttpResponseRedirect(request.get_full_path())
+                #return redirect(request.get_full_path)
                 
             else:
                 #Si tout vas bien on vérifie s'il ny'a une réservation à la même date:
                 all_booking_entries = Booking.objects.all()
                 #bookExist = all_booking_entries.filter(startDate__startswith=startDate[:10]).filter(resource__resourceType=resource)
-                bookExist = all_booking_entries.filter(startDate=startDate).filter(resource__resourceType=resource)
+                bookExist = all_booking_entries.filter(startDate=startDate[:10]).filter(resource__resourceType=resource)
                 if bookExist:
                     messages.add_message(request, messages.INFO, 'Une réservation à cette date existe déjà ...')
-                    return HttpResponseRedirect('book/'+id_booking)
+                    return HttpResponseRedirect(request.get_full_path())
                 
                 #Sinon on enregistre la reservation.
                 #Récupération de l'objet resource.
@@ -158,8 +178,8 @@ def edit_book(request, id_booking):
                 
                 
                 b.titleB = form.cleaned_data['title']
-                b.startDate = form.cleaned_data['startDate']
-                b.endDate = form.cleaned_data['endDate']
+                b.startDate = startDate[:10]
+                b.endDate = endDate[:10]
                 b.user = userObject
                 b.resource = resourceObject
                 b.save()
@@ -167,6 +187,27 @@ def edit_book(request, id_booking):
                 messages.add_message(request, messages.INFO, 'Votre réservation a été modifié !!!')
     # if a GET (or any other method) we'll create a blank form
     else:
-        form = bookForm()
+        form = bookForm(initial=bData)
 
     return render(request, 'resourceManagement/base_user_book_edit.html', {'form': form})
+    
+ def delete_book(request, id_booking):
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = signForm(request.POST)
+        # check whether it's valid:
+        if form.is_valid():
+            # process the data in form.cleaned_data as required
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password'] 
+            userExist = Users.objects.filter(email=email).filter(password=password).exists()           
+            # redirect to a new URL:
+            if userExist:
+                request.session['email'] = email
+                return HttpResponseRedirect('base_user')
+
+    # if a GET (or any other method) we'll create a blank form
+    else:
+        form = signForm()
+
+    return render(request, 'resourceManagement/signForm.html', {'form': form})
